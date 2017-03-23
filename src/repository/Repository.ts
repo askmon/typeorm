@@ -158,9 +158,9 @@ export class Repository<Entity extends ObjectLiteral> {
 
         // if multiple entities given then go throw all of them and save them
         if (entityOrEntities instanceof Array)
-            return Promise.all(entityOrEntities.map(entity => this.persist(entity)));
+            return Promise.all(entityOrEntities.map(entity => this.persist(entity, options)));
 
-        const queryRunnerProvider = this.queryRunnerProvider || new QueryRunnerProvider(this.connection.driver, true);
+        const queryRunnerProvider = new QueryRunnerProvider(this.connection.driver, true, options.schema);
         try {
             const transactionEntityManager = this.connection.createEntityManagerWithSingleDatabaseConnection(queryRunnerProvider);
             // transactionEntityManager.data =

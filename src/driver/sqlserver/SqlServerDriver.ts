@@ -144,7 +144,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
+    async createQueryRunner(schema:any): Promise<QueryRunner> {
         if (!this.connection)
             return Promise.reject(new ConnectionIsNotSetError("mssql"));
 

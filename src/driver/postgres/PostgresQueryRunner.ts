@@ -38,8 +38,9 @@ export class PostgresQueryRunner implements QueryRunner {
 
     constructor(protected databaseConnection: DatabaseConnection,
                 protected driver: PostgresDriver,
-                protected logger: Logger) {
-        this.schemaName = driver.schemaName || "public";
+                protected logger: Logger,
+                protected schema: string) {
+        this.schemaName = this.schema || "public";
     }
 
     // -------------------------------------------------------------------------
@@ -163,8 +164,8 @@ export class PostgresQueryRunner implements QueryRunner {
         const columns = keys.map(key => this.driver.escapeColumnName(key)).join(", ");
         const values = keys.map((key, index) => "$" + (index + 1)).join(",");
         const sql = columns.length > 0
-            ? `INSERT INTO ${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.fullName) : "" }`
-            : `INSERT INTO ${this.driver.escapeTableName(tableName)} DEFAULT VALUES ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.fullName) : "" }`;
+            ? `INSERT INTO ${this.schemaName}.${this.driver.escapeTableName(tableName)}(${columns}) VALUES (${values}) ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.fullName) : "" }`
+            : `INSERT INTO ${this.schemaName}.${this.driver.escapeTableName(tableName)} DEFAULT VALUES ${ generatedColumn ? " RETURNING " + this.driver.escapeColumnName(generatedColumn.fullName) : "" }`;
         const parameters = keys.map(key => keyValues[key]);
         const result: ObjectLiteral[] = await this.query(sql, parameters);
         if (generatedColumn)
@@ -182,7 +183,7 @@ export class PostgresQueryRunner implements QueryRunner {
 
         const updateValues = this.parametrize(valuesMap).join(", ");
         const conditionString = this.parametrize(conditions, Object.keys(valuesMap).length).join(" AND ");
-        const query = `UPDATE ${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
+        const query = `UPDATE ${this.schemaName}.${this.driver.escapeTableName(tableName)} SET ${updateValues} ${conditionString ? (" WHERE " + conditionString) : ""}`;
         const updateParams = Object.keys(valuesMap).map(key => valuesMap[key]);
         const conditionParams = Object.keys(conditions).map(key => conditions[key]);
         const allParameters = updateParams.concat(conditionParams);
@@ -209,7 +210,7 @@ export class PostgresQueryRunner implements QueryRunner {
         const conditionString = typeof conditions === "string" ? conditions : this.parametrize(conditions).join(" AND ");
         const parameters = conditions instanceof Object ? Object.keys(conditions).map(key => (conditions as ObjectLiteral)[key]) : maybeParameters;
 
-        const sql = `DELETE FROM ${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
+        const sql = `DELETE FROM ${this.schemaName}.${this.driver.escapeTableName(tableName)} WHERE ${conditionString}`;
         await this.query(sql, parameters);
     }
 
@@ -222,16 +223,16 @@ export class PostgresQueryRunner implements QueryRunner {
 
         let sql = "";
         if (hasLevel) {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
+            sql = `INSERT INTO ${this.schemaName}.${this.driver.escapeTableName(tableName)}(ancestor, descendant, level) ` +
                 `SELECT ancestor, ${newEntityId}, level + 1 FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}, 1`;
         } else {
-            sql = `INSERT INTO ${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
+            sql = `INSERT INTO ${this.schemaName}.${this.driver.escapeTableName(tableName)}(ancestor, descendant) ` +
                 `SELECT ancestor, ${newEntityId} FROM ${this.driver.escapeTableName(tableName)} WHERE descendant = ${parentId} ` +
                 `UNION ALL SELECT ${newEntityId}, ${newEntityId}`;
         }
         await this.query(sql);
-        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${tableName} WHERE descendant = ${parentId}`);
+        const results: ObjectLiteral[] = await this.query(`SELECT MAX(level) as level FROM ${this.schemaName}.${tableName} WHERE descendant = ${parentId}`);
         return results && results[0] && results[0]["level"] ? parseInt(results[0]["level"]) + 1 : 1;
     }
 
@@ -289,8 +290,8 @@ where constraint_type = 'PRIMARY KEY' and tc.table_catalog = '${this.dbName}'`;
                 .filter(dbColumn => dbColumn["table_name"] === tableSchema.name)
                 .map(dbColumn => {
                     const columnType = dbColumn["data_type"].toLowerCase() + (dbColumn["character_maximum_length"] !== undefined && dbColumn["character_maximum_length"] !== null ? ("(" + dbColumn["character_maximum_length"] + ")") : "");
-                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)` 
-                        || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)` 
+                    const isGenerated = dbColumn["column_default"] === `nextval('${dbColumn["table_name"]}_id_seq'::regclass)`
+                        || dbColumn["column_default"] === `nextval('"${dbColumn["table_name"]}_id_seq"'::regclass)`
                         || /^uuid\_generate\_v\d\(\)/.test(dbColumn["column_default"]);
 
                     const columnSchema = new ColumnSchema();

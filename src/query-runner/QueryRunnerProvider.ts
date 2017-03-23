@@ -27,7 +27,8 @@ export class QueryRunnerProvider {
     // -------------------------------------------------------------------------
 
     constructor(protected driver: Driver,
-                protected useSingleQueryRunner: boolean = false) {
+                protected useSingleQueryRunner: boolean = false,
+                protected schema: any) {
     }
 
     // -------------------------------------------------------------------------
@@ -53,7 +54,7 @@ export class QueryRunnerProvider {
                     // we do this because this method can be created multiple times
                     // this will lead to multiple query runner creations
                     this.reusableQueryRunnerPromise = this.driver
-                        .createQueryRunner()
+                        .createQueryRunner(this.schema)
                         .then(reusableQueryRunner => {
                             this.reusableQueryRunner = reusableQueryRunner;
                             return reusableQueryRunner;

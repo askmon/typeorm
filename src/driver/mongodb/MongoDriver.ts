@@ -116,7 +116,7 @@ export class MongoDriver implements Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
+    async createQueryRunner(schema:any): Promise<QueryRunner> {
         if (!this.pool)
             return Promise.reject(new ConnectionIsNotSetError("mongodb"));
 

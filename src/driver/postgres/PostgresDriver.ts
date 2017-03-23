@@ -73,7 +73,7 @@ export class PostgresDriver implements Driver {
      * default: "public"
      */
     public schemaName?: string;
-    
+
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -184,12 +184,12 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
+    async createQueryRunner(schema:any): Promise<QueryRunner> {
         if (!this.databaseConnection && !this.pool)
             return Promise.reject(new ConnectionIsNotSetError("postgres"));
 
         const databaseConnection = await this.retrieveDatabaseConnection();
-        return new PostgresQueryRunner(databaseConnection, this, this.logger);
+        return new PostgresQueryRunner(databaseConnection, this, this.logger, schema);
     }
 
     /**

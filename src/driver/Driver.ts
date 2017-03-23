@@ -54,7 +54,7 @@ export interface Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    createQueryRunner(): Promise<QueryRunner>;
+    createQueryRunner(schema:any): Promise<QueryRunner>;
 
     /**
      * Replaces parameters in the given sql with special escaping character

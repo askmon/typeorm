@@ -8,5 +8,6 @@ export interface PersistOptions {
      * This data can be used in subscribers then.
      */
     data?: any;
+    schema?: any;
 
 }

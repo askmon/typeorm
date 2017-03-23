@@ -166,7 +166,7 @@ export class OracleDriver implements Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
+    async createQueryRunner(schema:any): Promise<QueryRunner> {
         if (!this.databaseConnection && !this.pool)
             return Promise.reject(new ConnectionIsNotSetError("oracle"));
 

@@ -119,7 +119,7 @@ export class WebsqlDriver implements Driver {
     /**
      * Creates a query runner used for common queries.
      */
-    async createQueryRunner(): Promise<QueryRunner> {
+    async createQueryRunner(schema:any): Promise<QueryRunner> {
         if (!this.databaseConnection)
             return Promise.reject(new ConnectionIsNotSetError("websql"));
 
